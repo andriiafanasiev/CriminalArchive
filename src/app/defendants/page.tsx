@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { FiSliders } from 'react-icons/fi';
+import Loader from '../components/Loader';
 
 interface Convict {
     ID_ZASUDZ: number;
@@ -22,6 +23,7 @@ interface Convict {
 export default function DefendantsPage() {
     const [showForm, setShowForm] = useState(false);
     const [convicts, setConvicts] = useState<Convict[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [form, setForm] = useState({
         fio: '',
         date: '',
@@ -41,6 +43,7 @@ export default function DefendantsPage() {
 
     const fetchConvicts = async () => {
         try {
+            setIsLoading(true);
             const response = await fetch('/api/defendants');
             const data = await response.json();
 
@@ -57,6 +60,8 @@ export default function DefendantsPage() {
             setConvicts(data);
         } catch (error) {
             console.error('Failed to fetch convicts:', error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -220,64 +225,74 @@ export default function DefendantsPage() {
                                 <FiSliders />
                             </button>
                         </div>
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full text-center">
-                                <thead>
-                                    <tr className="text-lg font-semibold">
-                                        <th className="py-2">ID</th>
-                                        <th className="py-2">ПІБ</th>
-                                        <th className="py-2">
-                                            Дата народження
-                                        </th>
-                                        <th className="py-2">Адреса</th>
-                                        <th className="py-2">Контакт</th>
-                                        <th className="py-2">
-                                            Кількість справ
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {convicts.map((convict) => (
-                                        <tr
-                                            key={convict.ID_ZASUDZ}
-                                            className="text-md"
-                                        >
-                                            <td className="py-2">
-                                                {convict.ID_ZASUDZ}
-                                            </td>
-                                            <td className="py-2">
-                                                {convict.FIO_ZASUDZ}
-                                            </td>
-                                            <td className="py-2">
-                                                {convict.DATE_NARODZH
-                                                    ? new Date(
-                                                          convict.DATE_NARODZH
-                                                      ).toLocaleDateString()
-                                                    : 'Не вказано'}
-                                            </td>
-                                            <td className="py-2">
-                                                {convict.ADRESS_ZASUDZ}
-                                            </td>
-                                            <td className="py-2">
-                                                {convict.CONTACT_ZASUDZ ||
-                                                    'Не вказано'}
-                                            </td>
-                                            <td className="py-2">
-                                                {convict.Cases.length}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div className="flex justify-center mt-10">
-                            <button
-                                className="bg-black text-white text-lg rounded-full px-8 py-3 shadow hover:bg-gray-900 transition"
-                                onClick={() => setShowForm(true)}
-                            >
-                                Додати засудженого
-                            </button>
-                        </div>
+                        {isLoading ? (
+                            <div className="flex justify-center items-center py-20">
+                                <Loader />
+                            </div>
+                        ) : (
+                            <>
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full text-center">
+                                        <thead>
+                                            <tr className="text-lg font-semibold">
+                                                <th className="py-2">ID</th>
+                                                <th className="py-2">ПІБ</th>
+                                                <th className="py-2">
+                                                    Дата народження
+                                                </th>
+                                                <th className="py-2">Адреса</th>
+                                                <th className="py-2">
+                                                    Контакт
+                                                </th>
+                                                <th className="py-2">
+                                                    Кількість справ
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {convicts.map((convict) => (
+                                                <tr
+                                                    key={convict.ID_ZASUDZ}
+                                                    className="text-md"
+                                                >
+                                                    <td className="py-2">
+                                                        {convict.ID_ZASUDZ}
+                                                    </td>
+                                                    <td className="py-2">
+                                                        {convict.FIO_ZASUDZ}
+                                                    </td>
+                                                    <td className="py-2">
+                                                        {convict.DATE_NARODZH
+                                                            ? new Date(
+                                                                  convict.DATE_NARODZH
+                                                              ).toLocaleDateString()
+                                                            : 'Не вказано'}
+                                                    </td>
+                                                    <td className="py-2">
+                                                        {convict.ADRESS_ZASUDZ}
+                                                    </td>
+                                                    <td className="py-2">
+                                                        {convict.CONTACT_ZASUDZ ||
+                                                            'Не вказано'}
+                                                    </td>
+                                                    <td className="py-2">
+                                                        {convict.Cases.length}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div className="flex justify-center mt-10">
+                                    <button
+                                        className="bg-black text-white text-lg rounded-full px-8 py-3 shadow hover:bg-gray-900 transition"
+                                        onClick={() => setShowForm(true)}
+                                    >
+                                        Додати засудженого
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </>
                 )}
             </div>

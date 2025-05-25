@@ -7,11 +7,7 @@ export async function GET() {
     try {
         const convicts = await prisma.convict.findMany({
             include: {
-                Cases: {
-                    include: {
-                        CaseLinks: true,
-                    },
-                },
+                Cases: true,
             },
         });
 

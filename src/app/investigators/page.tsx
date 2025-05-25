@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { FiSliders } from 'react-icons/fi';
+import Loader from '../components/Loader';
 
 interface Investigator {
     ID_SLIDCHY: number;
@@ -16,6 +17,7 @@ interface Investigator {
 export default function InvestigatorsPage() {
     const [showForm, setShowForm] = useState(false);
     const [investigators, setInvestigators] = useState<Investigator[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [form, setForm] = useState({
         fio: '',
         position: '',
@@ -31,6 +33,7 @@ export default function InvestigatorsPage() {
 
     const fetchInvestigators = async () => {
         try {
+            setIsLoading(true);
             const response = await fetch('/api/investigators');
             const data = await response.json();
 
@@ -47,6 +50,8 @@ export default function InvestigatorsPage() {
             setInvestigators(data);
         } catch (error) {
             console.error('Failed to fetch investigators:', error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -170,59 +175,83 @@ export default function InvestigatorsPage() {
                                 <FiSliders />
                             </button>
                         </div>
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full text-center">
-                                <thead>
-                                    <tr className="text-lg font-semibold">
-                                        <th className="py-2">ID</th>
-                                        <th className="py-2">ПІБ</th>
-                                        <th className="py-2">Посада</th>
-                                        <th className="py-2">
-                                            Кількість справ
-                                        </th>
-                                        <th className="py-2">Активні справи</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {investigators.map((investigator) => (
-                                        <tr
-                                            key={investigator.ID_SLIDCHY}
-                                            className="text-md"
-                                        >
-                                            <td className="py-2">
-                                                {investigator.ID_SLIDCHY}
-                                            </td>
-                                            <td className="py-2">
-                                                {investigator.FIO_SLIDCHY}
-                                            </td>
-                                            <td className="py-2">
-                                                {investigator.POSADA_SLIDCHY}
-                                            </td>
-                                            <td className="py-2">
-                                                {investigator.Cases.length}
-                                            </td>
-                                            <td className="py-2">
-                                                {
-                                                    investigator.Cases.filter(
-                                                        (case_) =>
-                                                            case_.STATUS_SPRAVY ===
-                                                            'активна'
-                                                    ).length
-                                                }
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div className="flex justify-center mt-10">
-                            <button
-                                className="bg-black text-white text-lg rounded-full px-8 py-3 shadow hover:bg-gray-900 transition"
-                                onClick={() => setShowForm(true)}
-                            >
-                                Додати слідчого
-                            </button>
-                        </div>
+                        {isLoading ? (
+                            <div className="flex justify-center items-center py-20">
+                                <Loader />
+                            </div>
+                        ) : (
+                            <>
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full text-center">
+                                        <thead>
+                                            <tr className="text-lg font-semibold">
+                                                <th className="py-2">ID</th>
+                                                <th className="py-2">ПІБ</th>
+                                                <th className="py-2">Посада</th>
+                                                <th className="py-2">
+                                                    Кількість справ
+                                                </th>
+                                                <th className="py-2">
+                                                    Активні справи
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {investigators.map(
+                                                (investigator) => (
+                                                    <tr
+                                                        key={
+                                                            investigator.ID_SLIDCHY
+                                                        }
+                                                        className="text-md"
+                                                    >
+                                                        <td className="py-2">
+                                                            {
+                                                                investigator.ID_SLIDCHY
+                                                            }
+                                                        </td>
+                                                        <td className="py-2">
+                                                            {
+                                                                investigator.FIO_SLIDCHY
+                                                            }
+                                                        </td>
+                                                        <td className="py-2">
+                                                            {
+                                                                investigator.POSADA_SLIDCHY
+                                                            }
+                                                        </td>
+                                                        <td className="py-2">
+                                                            {
+                                                                investigator
+                                                                    .Cases
+                                                                    .length
+                                                            }
+                                                        </td>
+                                                        <td className="py-2">
+                                                            {
+                                                                investigator.Cases.filter(
+                                                                    (case_) =>
+                                                                        case_.STATUS_SPRAVY ===
+                                                                        'активна'
+                                                                ).length
+                                                            }
+                                                        </td>
+                                                    </tr>
+                                                )
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div className="flex justify-center mt-10">
+                                    <button
+                                        className="bg-black text-white text-lg rounded-full px-8 py-3 shadow hover:bg-gray-900 transition"
+                                        onClick={() => setShowForm(true)}
+                                    >
+                                        Додати слідчого
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </>
                 )}
             </div>

@@ -50,7 +50,11 @@ export async function POST(request: Request) {
             data: {
                 ID_ZASUDZ: parseInt(ID_ZASUDZ),
                 ID_SLIDCHY: parseInt(ID_SLIDCHY),
-                STATUS_SPRAVY: STATUS_SPRAVY,
+                STATUS_SPRAVY,
+            },
+            include: {
+                convict: true,
+                investigator: true,
             },
         });
 

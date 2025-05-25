@@ -49,6 +49,16 @@ export default function Navbar() {
                         >
                             Слідчі
                         </Link>
+                        <Link
+                            href="/articles"
+                            className={`hover:text-gray-300 ${
+                                pathname === '/articles'
+                                    ? 'text-blue-500 font-semibold'
+                                    : ''
+                            }`}
+                        >
+                            Статті
+                        </Link>
                     </div>
                 </div>
             </div>

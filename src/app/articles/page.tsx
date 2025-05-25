@@ -4,58 +4,32 @@ import React, { useState, useEffect } from 'react';
 import { FiSliders } from 'react-icons/fi';
 import Loader from '../components/Loader';
 
-// Тимчасові дані для прикладу, потім заміняться на дані з бекенду
-const statusOptions = [
-    { value: 'активна', label: 'активна' },
-    { value: 'закрита', label: 'закрита' },
-    { value: 'очікує розгляду', label: 'очікує розгляду' },
-];
-
-interface Case {
-    ID_SPRAVY: number;
-    ID_ZASUDZ: number | null;
-    ID_SLIDCHY: number | null;
-    STATUS_SPRAVY: string;
-    convict: {
-        FIO_ZASUDZ: string;
-    } | null;
-    investigator: {
-        FIO_SLIDCHY: string;
-    } | null;
-    CaseLinks: {
-        ID_SPRAVY: number;
-        ID_STATYA: number;
-        DATE_SPRAVY: string;
-        article: {
-            ID_STATYA: number;
-            NUMBER_STATYA: string;
-            DESCRIPTION_STATYA: string | null;
-        };
-    }[];
+interface Article {
+    ID_STATYA: number;
+    NUMBER_STATYA: string;
+    DESCRIPTION_STATYA: string | null;
 }
 
-export default function CasesPage() {
+export default function ArticlesPage() {
     const [showForm, setShowForm] = useState(false);
-    const [cases, setCases] = useState<Case[]>([]);
+    const [articles, setArticles] = useState<Article[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [form, setForm] = useState({
-        defendantId: '',
-        investigatorId: '',
-        status: statusOptions[0].value,
+        number: '',
+        description: '',
     });
     const [errors, setErrors] = useState({
-        defendantId: '',
-        investigatorId: '',
+        number: '',
     });
 
     useEffect(() => {
-        fetchCases();
+        fetchArticles();
     }, []);
 
-    const fetchCases = async () => {
+    const fetchArticles = async () => {
         try {
             setIsLoading(true);
-            const response = await fetch('/api/cases');
+            const response = await fetch('/api/articles');
             const data = await response.json();
 
             if (data.error) {
@@ -68,16 +42,16 @@ export default function CasesPage() {
                 return;
             }
 
-            setCases(data);
+            setArticles(data);
         } catch (error) {
-            console.error('Failed to fetch cases:', error);
+            console.error('Failed to fetch articles:', error);
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
     ) => {
         setForm({ ...form, [e.target.name]: e.target.value });
         setErrors({ ...errors, [e.target.name]: '' });
@@ -85,48 +59,38 @@ export default function CasesPage() {
 
     const validate = () => {
         const newErrors = {
-            defendantId: '',
-            investigatorId: '',
+            number: '',
         };
-        if (!form.defendantId)
-            newErrors.defendantId = 'ID Засудженого обовʼязковий';
-        else if (!/^\d+$/.test(form.defendantId))
-            newErrors.defendantId = 'ID має бути числом';
-        if (!form.investigatorId)
-            newErrors.investigatorId = 'ID Слідчого обовʼязковий';
-        else if (!/^\d+$/.test(form.investigatorId))
-            newErrors.investigatorId = 'ID має бути числом';
+        if (!form.number) newErrors.number = 'Номер статті обовʼязковий';
         setErrors(newErrors);
-        return !newErrors.defendantId && !newErrors.investigatorId;
+        return !newErrors.number;
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (validate()) {
             try {
-                const response = await fetch('/api/cases', {
+                const response = await fetch('/api/articles', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        ID_ZASUDZ: form.defendantId,
-                        ID_SLIDCHY: form.investigatorId,
-                        STATUS_SPRAVY: form.status,
+                        NUMBER_STATYA: form.number,
+                        DESCRIPTION_STATYA: form.description || null,
                     }),
                 });
 
                 if (response.ok) {
-                    await fetchCases();
+                    await fetchArticles();
                     setShowForm(false);
                     setForm({
-                        defendantId: '',
-                        investigatorId: '',
-                        status: statusOptions[0].value,
+                        number: '',
+                        description: '',
                     });
                 }
             } catch (error) {
-                console.error('Failed to create case:', error);
+                console.error('Failed to create article:', error);
             }
         }
     };
@@ -137,76 +101,45 @@ export default function CasesPage() {
                 {showForm ? (
                     <form onSubmit={handleSubmit} className="w-full">
                         <h2 className="text-2xl font-bold mb-8">
-                            Додати нову справу
+                            Додати нову статтю
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8 items-center mb-8">
                             <label
                                 className="text-lg font-normal md:justify-self-end"
-                                htmlFor="defendantId"
+                                htmlFor="number"
                             >
-                                ID Засудженого:
+                                Номер статті:
                             </label>
                             <div>
                                 <input
-                                    id="defendantId"
-                                    name="defendantId"
+                                    id="number"
+                                    name="number"
                                     type="text"
-                                    value={form.defendantId}
+                                    value={form.number}
                                     onChange={handleChange}
                                     className="w-full border border-gray-300 rounded-full px-6 py-2 text-lg focus:outline-none focus:ring-2 focus:ring-black"
                                 />
-                                {errors.defendantId && (
+                                {errors.number && (
                                     <div className="text-red-500 text-sm mt-1">
-                                        {errors.defendantId}
+                                        {errors.number}
                                     </div>
                                 )}
                             </div>
 
                             <label
                                 className="text-lg font-normal md:justify-self-end"
-                                htmlFor="investigatorId"
+                                htmlFor="description"
                             >
-                                ID Слідчого:
+                                Опис:
                             </label>
                             <div>
-                                <input
-                                    id="investigatorId"
-                                    name="investigatorId"
-                                    type="text"
-                                    value={form.investigatorId}
+                                <textarea
+                                    id="description"
+                                    name="description"
+                                    value={form.description}
                                     onChange={handleChange}
-                                    className="w-full border border-gray-300 rounded-full px-6 py-2 text-lg focus:outline-none focus:ring-2 focus:ring-black"
+                                    className="w-full border border-gray-300 rounded-2xl px-6 py-2 text-lg focus:outline-none focus:ring-2 focus:ring-black min-h-[100px]"
                                 />
-                                {errors.investigatorId && (
-                                    <div className="text-red-500 text-sm mt-1">
-                                        {errors.investigatorId}
-                                    </div>
-                                )}
-                            </div>
-
-                            <label
-                                className="text-lg font-normal md:justify-self-end"
-                                htmlFor="status"
-                            >
-                                Статус Справи:
-                            </label>
-                            <div>
-                                <select
-                                    id="status"
-                                    name="status"
-                                    value={form.status}
-                                    onChange={handleChange}
-                                    className="w-full border border-gray-300 rounded-full px-6 py-2 text-lg focus:outline-none focus:ring-2 focus:ring-black"
-                                >
-                                    {statusOptions.map((opt) => (
-                                        <option
-                                            key={opt.value}
-                                            value={opt.value}
-                                        >
-                                            {opt.label}
-                                        </option>
-                                    ))}
-                                </select>
                             </div>
                         </div>
                         <button
@@ -220,7 +153,7 @@ export default function CasesPage() {
                     <>
                         <div className="flex justify-center items-center mb-6">
                             <h1 className="text-3xl font-bold text-center flex-1">
-                                Справи
+                                Статті
                             </h1>
                             <button
                                 className="absolute right-8 top-0 text-3xl p-2 hover:bg-gray-100 rounded-full transition"
@@ -239,41 +172,28 @@ export default function CasesPage() {
                                     <table className="min-w-full text-center">
                                         <thead>
                                             <tr className="text-lg font-semibold">
+                                                <th className="py-2">ID</th>
                                                 <th className="py-2">
-                                                    ID Справи
+                                                    Номер статті
                                                 </th>
-                                                <th className="py-2">
-                                                    Засуджений
-                                                </th>
-                                                <th className="py-2">
-                                                    Слідчий
-                                                </th>
-                                                <th className="py-2">
-                                                    Статус Справи
-                                                </th>
+                                                <th className="py-2">Опис</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {cases.map((item) => (
+                                            {articles.map((article) => (
                                                 <tr
-                                                    key={item.ID_SPRAVY}
+                                                    key={article.ID_STATYA}
                                                     className="text-md"
                                                 >
                                                     <td className="py-2">
-                                                        {item.ID_SPRAVY}
+                                                        {article.ID_STATYA}
                                                     </td>
                                                     <td className="py-2">
-                                                        {item.convict
-                                                            ?.FIO_ZASUDZ ||
+                                                        {article.NUMBER_STATYA}
+                                                    </td>
+                                                    <td className="py-2">
+                                                        {article.DESCRIPTION_STATYA ||
                                                             'Не вказано'}
-                                                    </td>
-                                                    <td className="py-2">
-                                                        {item.investigator
-                                                            ?.FIO_SLIDCHY ||
-                                                            'Не вказано'}
-                                                    </td>
-                                                    <td className="py-2">
-                                                        {item.STATUS_SPRAVY}
                                                     </td>
                                                 </tr>
                                             ))}
@@ -285,7 +205,7 @@ export default function CasesPage() {
                                         className="bg-black text-white text-lg rounded-full px-8 py-3 shadow hover:bg-gray-900 transition"
                                         onClick={() => setShowForm(true)}
                                     >
-                                        Додати справу
+                                        Додати статтю
                                     </button>
                                 </div>
                             </>
