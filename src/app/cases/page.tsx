@@ -1,34 +1,75 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiSliders } from 'react-icons/fi';
 
 // Тимчасові дані для прикладу, потім заміняться на дані з бекенду
-const cases = [
-    { id: 1, defendantId: 101, investigatorId: 201, status: 'активна' },
-    { id: 2, defendantId: 102, investigatorId: 202, status: 'закрита' },
-    { id: 3, defendantId: 103, investigatorId: 203, status: 'очікує розгляду' },
-];
-
 const statusOptions = [
     { value: 'активна', label: 'активна' },
     { value: 'закрита', label: 'закрита' },
     { value: 'очікує розгляду', label: 'очікує розгляду' },
 ];
 
+interface Case {
+    ID_SPRAVY: number;
+    ID_ZASUDZ: number | null;
+    ID_SLIDCHY: number | null;
+    STATUS_SPRAVY: string;
+    convict: {
+        FIO_ZASUDZ: string;
+    } | null;
+    investigator: {
+        FIO_SLIDCHY: string;
+    } | null;
+    CaseLinks: {
+        ID_SPRAVY: number;
+        ID_STATYA: number;
+        DATE_SPRAVY: string;
+        article: {
+            ID_STATYA: number;
+            NUMBER_STATYA: string;
+            DESCRIPTION_STATYA: string | null;
+        };
+    }[];
+}
+
 export default function CasesPage() {
     const [showForm, setShowForm] = useState(false);
+    const [cases, setCases] = useState<Case[]>([]);
     const [form, setForm] = useState({
-        id: '',
         defendantId: '',
         investigatorId: '',
         status: statusOptions[0].value,
     });
     const [errors, setErrors] = useState({
-        id: '',
         defendantId: '',
         investigatorId: '',
     });
+
+    useEffect(() => {
+        fetchCases();
+    }, []);
+
+    const fetchCases = async () => {
+        try {
+            const response = await fetch('/api/cases');
+            const data = await response.json();
+
+            if (data.error) {
+                console.error('API Error:', data.error);
+                return;
+            }
+
+            if (!Array.isArray(data)) {
+                console.error('Invalid data format received');
+                return;
+            }
+
+            setCases(data);
+        } catch (error) {
+            console.error('Failed to fetch cases:', error);
+        }
+    };
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -38,17 +79,10 @@ export default function CasesPage() {
     };
 
     const validate = () => {
-        const newErrors: {
-            id: string;
-            defendantId: string;
-            investigatorId: string;
-        } = {
-            id: '',
+        const newErrors = {
             defendantId: '',
             investigatorId: '',
         };
-        if (!form.id) newErrors.id = 'ID Справи обовʼязковий';
-        else if (!/^\d+$/.test(form.id)) newErrors.id = 'ID має бути числом';
         if (!form.defendantId)
             newErrors.defendantId = 'ID Засудженого обовʼязковий';
         else if (!/^\d+$/.test(form.defendantId))
@@ -58,22 +92,37 @@ export default function CasesPage() {
         else if (!/^\d+$/.test(form.investigatorId))
             newErrors.investigatorId = 'ID має бути числом';
         setErrors(newErrors);
-        return (
-            !newErrors.id && !newErrors.defendantId && !newErrors.investigatorId
-        );
+        return !newErrors.defendantId && !newErrors.investigatorId;
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (validate()) {
-            // Тут можна відправити дані на бекенд
-            setShowForm(false);
-            setForm({
-                id: '',
-                defendantId: '',
-                investigatorId: '',
-                status: statusOptions[0].value,
-            });
+            try {
+                const response = await fetch('/api/cases', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ID_ZASUDZ: form.defendantId,
+                        ID_SLIDCHY: form.investigatorId,
+                        STATUS_SPRAVY: form.status,
+                    }),
+                });
+
+                if (response.ok) {
+                    await fetchCases();
+                    setShowForm(false);
+                    setForm({
+                        defendantId: '',
+                        investigatorId: '',
+                        status: statusOptions[0].value,
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to create case:', error);
+            }
         }
     };
 
@@ -86,28 +135,6 @@ export default function CasesPage() {
                             Додати нову справу
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8 items-center mb-8">
-                            <label
-                                className="text-lg font-normal md:justify-self-end"
-                                htmlFor="id"
-                            >
-                                ID Справи:
-                            </label>
-                            <div>
-                                <input
-                                    id="id"
-                                    name="id"
-                                    type="text"
-                                    value={form.id}
-                                    onChange={handleChange}
-                                    className="w-full border border-gray-300 rounded-full px-6 py-2 text-lg focus:outline-none focus:ring-2 focus:ring-black"
-                                />
-                                {errors.id && (
-                                    <div className="text-red-500 text-sm mt-1">
-                                        {errors.id}
-                                    </div>
-                                )}
-                            </div>
-
                             <label
                                 className="text-lg font-normal md:justify-self-end"
                                 htmlFor="defendantId"
@@ -202,23 +229,31 @@ export default function CasesPage() {
                                 <thead>
                                     <tr className="text-lg font-semibold">
                                         <th className="py-2">ID Справи</th>
-                                        <th className="py-2">ID Засудженого</th>
-                                        <th className="py-2">ID Слідчого</th>
+                                        <th className="py-2">Засуджений</th>
+                                        <th className="py-2">Слідчий</th>
                                         <th className="py-2">Статус Справи</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {cases.map((item) => (
-                                        <tr key={item.id} className="text-md">
-                                            <td className="py-2">{item.id}</td>
+                                        <tr
+                                            key={item.ID_SPRAVY}
+                                            className="text-md"
+                                        >
                                             <td className="py-2">
-                                                {item.defendantId}
+                                                {item.ID_SPRAVY}
                                             </td>
                                             <td className="py-2">
-                                                {item.investigatorId}
+                                                {item.convict?.FIO_ZASUDZ ||
+                                                    'Не вказано'}
                                             </td>
                                             <td className="py-2">
-                                                {item.status}
+                                                {item.investigator
+                                                    ?.FIO_SLIDCHY ||
+                                                    'Не вказано'}
+                                            </td>
+                                            <td className="py-2">
+                                                {item.STATUS_SPRAVY}
                                             </td>
                                         </tr>
                                     ))}

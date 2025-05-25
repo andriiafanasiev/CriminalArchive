@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Convict {
+  ID_ZASUDZ      Int      @id @default(autoincrement())
+  FIO_ZASUDZ     String
+  DATE_NARODZH   DateTime?
+  ADRESS_ZASUDZ  String
+  CONTACT_ZASUDZ String?
+  Cases          Case[]
+
+  @@map("Convicts")
+}
+
+model Investigator {
+  ID_SLIDCHY     Int      @id @default(autoincrement())
+  FIO_SLIDCHY    String
+  POSADA_SLIDCHY String
+  Cases          Case[]
+
+  @@map("Investigators")
+}
+
+model CrimeArticle {
+  ID_STATYA          Int         @id @default(autoincrement())
+  NUMBER_STATYA      String
+  DESCRIPTION_STATYA String?
+  CaseLinks          CaseLink[]
+
+  @@map("CrimeArticles")
+}
+
+model Case {
+  ID_SPRAVY     Int      @id @default(autoincrement())
+  ID_ZASUDZ     Int?
+  ID_SLIDCHY    Int?
+  STATUS_SPRAVY String
+  convict       Convict?      @relation(fields: [ID_ZASUDZ], references: [ID_ZASUDZ])
+  investigator  Investigator? @relation(fields: [ID_SLIDCHY], references: [ID_SLIDCHY])
+  CaseLinks     CaseLink[]
+
+  @@map("Cases")
+}
+
+model CaseLink {
+  ID_SPRAVY   Int
+  ID_STATYA   Int
+  DATE_SPRAVY DateTime
+
+  case        Case         @relation(fields: [ID_SPRAVY], references: [ID_SPRAVY])
+  article     CrimeArticle @relation(fields: [ID_STATYA], references: [ID_STATYA])
+
+  @@id([ID_SPRAVY, ID_STATYA])
+  @@map("CaseLinks")
+}

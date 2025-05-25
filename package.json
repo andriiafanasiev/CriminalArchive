@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@prisma/client": "^6.8.2",
+    "mysql2": "^3.14.1",
     "next": "15.3.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -22,7 +24,21 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.3.2",
+    "prisma": "^6.8.2",
     "tailwindcss": "^4",
     "typescript": "^5"
-  }
+  },
+  "description": "A modern web system for managing court cases, defendants, and investigators. Built with Next.js 15 and Tailwind CSS.",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andriiafanasiev/CriminalArchive.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/andriiafanasiev/CriminalArchive/issues"
+  },
+  "homepage": "https://github.com/andriiafanasiev/CriminalArchive#readme"
 }
