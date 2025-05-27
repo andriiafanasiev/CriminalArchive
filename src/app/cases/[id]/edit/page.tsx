@@ -12,8 +12,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/app/components/ui/select';
-import { use } from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
 
 interface Case {
     id: number;
@@ -27,6 +25,14 @@ interface Case {
     investigator: {
         id: number;
         fio: string;
+    };
+    sentence?: {
+        type: string;
+        startDate?: string;
+        endDate?: string;
+        termYears?: string;
+        location?: string;
+        fineStatus?: string;
     };
 }
 
@@ -104,6 +110,16 @@ export default function EditCasePage({ params }: { params: { id: string } }) {
                     convictId: caseData.convictId,
                     investigatorId: caseData.investigatorId,
                     status: caseData.status,
+                    sentence: caseData.sentence
+                        ? {
+                              type: caseData.sentence.type,
+                              startDate: caseData.sentence.startDate,
+                              endDate: caseData.sentence.endDate,
+                              termYears: caseData.sentence.termYears,
+                              location: caseData.sentence.location,
+                              fineStatus: caseData.sentence.fineStatus,
+                          }
+                        : undefined,
                 }),
             });
 
@@ -256,6 +272,338 @@ export default function EditCasePage({ params }: { params: { id: string } }) {
                             </SelectContent>
                         </Select>
                     </div>
+
+                    <div className="border-t pt-6">
+                        <h2 className="text-lg font-semibold mb-4 text-black">
+                            Вирок
+                        </h2>
+
+                        <div className="space-y-4">
+                            <div>
+                                <Label
+                                    htmlFor="sentenceType"
+                                    className="text-black"
+                                >
+                                    Тип вироку
+                                </Label>
+                                <Select
+                                    value={caseData.sentence?.type || ''}
+                                    onValueChange={(value) =>
+                                        setCaseData({
+                                            ...caseData,
+                                            sentence: {
+                                                ...caseData.sentence,
+                                                type: value,
+                                            },
+                                        })
+                                    }
+                                >
+                                    <SelectTrigger className="bg-white text-black border-gray-300">
+                                        <SelectValue placeholder="Виберіть тип вироку" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem
+                                            value="imprisonment"
+                                            className="text-black"
+                                        >
+                                            Позбавлення волі
+                                        </SelectItem>
+                                        <SelectItem
+                                            value="conditional"
+                                            className="text-black"
+                                        >
+                                            Умовне
+                                        </SelectItem>
+                                        <SelectItem
+                                            value="fine"
+                                            className="text-black"
+                                        >
+                                            Штраф
+                                        </SelectItem>
+                                        <SelectItem
+                                            value="correctional"
+                                            className="text-black"
+                                        >
+                                            Виправні роботи
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {caseData.sentence?.type && (
+                                <>
+                                    <div>
+                                        <Label
+                                            htmlFor="startDate"
+                                            className="text-black"
+                                        >
+                                            {caseData.sentence?.type === 'fine'
+                                                ? 'Дата вироку'
+                                                : 'Дата початку'}
+                                        </Label>
+                                        <Input
+                                            id="startDate"
+                                            type="date"
+                                            value={
+                                                caseData.sentence?.startDate ||
+                                                ''
+                                            }
+                                            onChange={(e) =>
+                                                setCaseData({
+                                                    ...caseData,
+                                                    sentence: {
+                                                        type:
+                                                            caseData.sentence
+                                                                ?.type || '',
+                                                        startDate:
+                                                            e.target.value,
+                                                        endDate:
+                                                            caseData.sentence
+                                                                ?.endDate || '',
+                                                        termYears:
+                                                            caseData.sentence
+                                                                ?.termYears ||
+                                                            '',
+                                                        location:
+                                                            caseData.sentence
+                                                                ?.location ||
+                                                            '',
+                                                        fineStatus:
+                                                            caseData.sentence
+                                                                ?.fineStatus,
+                                                    },
+                                                })
+                                            }
+                                            className="bg-white text-black"
+                                        />
+                                    </div>
+
+                                    {caseData.sentence?.type ===
+                                        'imprisonment' && (
+                                        <div>
+                                            <Label
+                                                htmlFor="endDate"
+                                                className="text-black"
+                                            >
+                                                Дата закінчення
+                                            </Label>
+                                            <Input
+                                                id="endDate"
+                                                type="date"
+                                                value={
+                                                    caseData.sentence
+                                                        ?.endDate || ''
+                                                }
+                                                onChange={(e) =>
+                                                    setCaseData({
+                                                        ...caseData,
+                                                        sentence: {
+                                                            type:
+                                                                caseData
+                                                                    .sentence
+                                                                    ?.type ||
+                                                                '',
+                                                            startDate:
+                                                                caseData
+                                                                    .sentence
+                                                                    ?.startDate ||
+                                                                '',
+                                                            endDate:
+                                                                e.target.value,
+                                                            termYears:
+                                                                caseData
+                                                                    .sentence
+                                                                    ?.termYears ||
+                                                                '',
+                                                            location:
+                                                                caseData
+                                                                    .sentence
+                                                                    ?.location ||
+                                                                '',
+                                                            fineStatus:
+                                                                caseData
+                                                                    .sentence
+                                                                    ?.fineStatus,
+                                                        },
+                                                    })
+                                                }
+                                                className="bg-white text-black"
+                                            />
+                                        </div>
+                                    )}
+
+                                    <div>
+                                        <Label
+                                            htmlFor="termYears"
+                                            className="text-black"
+                                        >
+                                            {caseData.sentence?.type === 'fine'
+                                                ? 'Сума штрафу'
+                                                : 'Термін (роки)'}
+                                        </Label>
+                                        <Input
+                                            id="termYears"
+                                            type="number"
+                                            value={
+                                                caseData.sentence?.termYears ||
+                                                ''
+                                            }
+                                            onChange={(e) =>
+                                                setCaseData({
+                                                    ...caseData,
+                                                    sentence: {
+                                                        type:
+                                                            caseData.sentence
+                                                                ?.type || '',
+                                                        startDate:
+                                                            caseData.sentence
+                                                                ?.startDate ||
+                                                            '',
+                                                        endDate:
+                                                            caseData.sentence
+                                                                ?.endDate || '',
+                                                        termYears:
+                                                            e.target.value,
+                                                        location:
+                                                            caseData.sentence
+                                                                ?.location ||
+                                                            '',
+                                                        fineStatus:
+                                                            caseData.sentence
+                                                                ?.fineStatus,
+                                                    },
+                                                })
+                                            }
+                                            className="bg-white text-black"
+                                        />
+                                    </div>
+
+                                    {caseData.sentence?.type ===
+                                        'imprisonment' && (
+                                        <div>
+                                            <Label
+                                                htmlFor="location"
+                                                className="text-black"
+                                            >
+                                                Місце відбування покарання
+                                            </Label>
+                                            <Input
+                                                id="location"
+                                                type="text"
+                                                value={
+                                                    caseData.sentence
+                                                        ?.location || ''
+                                                }
+                                                onChange={(e) =>
+                                                    setCaseData({
+                                                        ...caseData,
+                                                        sentence: {
+                                                            type:
+                                                                caseData
+                                                                    .sentence
+                                                                    ?.type ||
+                                                                '',
+                                                            startDate:
+                                                                caseData
+                                                                    .sentence
+                                                                    ?.startDate ||
+                                                                '',
+                                                            endDate:
+                                                                caseData
+                                                                    .sentence
+                                                                    ?.endDate ||
+                                                                '',
+                                                            termYears:
+                                                                caseData
+                                                                    .sentence
+                                                                    ?.termYears ||
+                                                                '',
+                                                            location:
+                                                                e.target.value,
+                                                            fineStatus:
+                                                                caseData
+                                                                    .sentence
+                                                                    ?.fineStatus,
+                                                        },
+                                                    })
+                                                }
+                                                className="bg-white text-black"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {caseData.sentence?.type === 'fine' && (
+                                        <div>
+                                            <Label
+                                                htmlFor="fineStatus"
+                                                className="text-black"
+                                            >
+                                                Статус штрафу
+                                            </Label>
+                                            <Select
+                                                value={
+                                                    caseData.sentence
+                                                        ?.fineStatus || ''
+                                                }
+                                                onValueChange={(value) =>
+                                                    setCaseData({
+                                                        ...caseData,
+                                                        sentence: {
+                                                            type:
+                                                                caseData
+                                                                    .sentence
+                                                                    ?.type ||
+                                                                '',
+                                                            startDate:
+                                                                caseData
+                                                                    .sentence
+                                                                    ?.startDate ||
+                                                                '',
+                                                            endDate:
+                                                                caseData
+                                                                    .sentence
+                                                                    ?.endDate ||
+                                                                '',
+                                                            termYears:
+                                                                caseData
+                                                                    .sentence
+                                                                    ?.termYears ||
+                                                                '',
+                                                            location:
+                                                                caseData
+                                                                    .sentence
+                                                                    ?.location ||
+                                                                '',
+                                                            fineStatus: value,
+                                                        },
+                                                    })
+                                                }
+                                            >
+                                                <SelectTrigger className="bg-white text-black border-gray-300">
+                                                    <SelectValue placeholder="Оберіть статус штрафу" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem
+                                                        value="paid"
+                                                        className="text-black"
+                                                    >
+                                                        Сплачено
+                                                    </SelectItem>
+                                                    <SelectItem
+                                                        value="pending"
+                                                        className="text-black"
+                                                    >
+                                                        Очікує сплати
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>
+
                     <div className="flex justify-end space-x-4">
                         <Button
                             type="button"

@@ -1,6 +1,6 @@
 import { ColumnDef } from '@tanstack/react-table';
 
-export type Defendant = {
+export type Convict = {
     id: number;
     fio: string;
     birthDate: string;
@@ -8,7 +8,7 @@ export type Defendant = {
     contact: string | null;
 };
 
-export const columns: ColumnDef<Defendant>[] = [
+export const columns: ColumnDef<Convict>[] = [
     {
         accessorKey: 'id',
         header: 'Номер',

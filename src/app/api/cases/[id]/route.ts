@@ -51,7 +51,8 @@ export async function PATCH(
         const data = await request.json();
         const caseId = parseInt(params.id);
 
-        const updatedCase = await prisma.case.update({
+        // Спочатку оновлюємо основну інформацію про справу
+        await prisma.case.update({
             where: { id: caseId },
             data: {
                 convictId: data.convictId,
@@ -60,7 +61,72 @@ export async function PATCH(
             },
         });
 
-        return NextResponse.json(updatedCase);
+        // Потім оновлюємо або створюємо вирок
+        if (data.sentence) {
+            const existingSentence = await prisma.sentence.findFirst({
+                where: { caseId },
+            });
+
+            if (existingSentence) {
+                await prisma.sentence.update({
+                    where: { id: existingSentence.id },
+                    data: {
+                        type: data.sentence.type,
+                        startDate: new Date(data.sentence.startDate),
+                        endDate: data.sentence.endDate
+                            ? new Date(data.sentence.endDate)
+                            : null,
+                        termYears: data.sentence.termYears
+                            ? parseInt(data.sentence.termYears)
+                            : null,
+                        location: data.sentence.location,
+                    },
+                });
+            } else {
+                await prisma.sentence.create({
+                    data: {
+                        convictId: data.convictId,
+                        caseId,
+                        type: data.sentence.type,
+                        startDate: new Date(data.sentence.startDate),
+                        endDate: data.sentence.endDate
+                            ? new Date(data.sentence.endDate)
+                            : null,
+                        termYears: data.sentence.termYears
+                            ? parseInt(data.sentence.termYears)
+                            : null,
+                        location: data.sentence.location,
+                    },
+                });
+            }
+        } else {
+            // Якщо вирок не передано, видаляємо існуючий
+            await prisma.sentence.deleteMany({
+                where: { caseId },
+            });
+        }
+
+        // Отримуємо оновлену справу з вироком
+        const finalCase = await prisma.case.findUnique({
+            where: { id: caseId },
+            include: {
+                convict: {
+                    select: {
+                        id: true,
+                        fio: true,
+                    },
+                },
+                investigator: {
+                    select: {
+                        id: true,
+                        fio: true,
+                    },
+                },
+                sentences: true,
+            },
+        });
+
+        return NextResponse.json(finalCase);
     } catch (error) {
         console.error('Помилка при оновленні справи:', error);
         return NextResponse.json(

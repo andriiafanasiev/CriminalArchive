@@ -6,11 +6,16 @@ import { Button } from '@/app/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/components/auth/auth-provider';
 import { columns, Defendant } from './columns';
+import { Input } from '@/app/components/ui/input';
 
 export default function DefendantsPage() {
     const [defendants, setDefendants] = useState<Defendant[]>([]);
+    const [filteredDefendants, setFilteredDefendants] = useState<Defendant[]>(
+        []
+    );
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
     const { user } = useAuth();
     const router = useRouter();
 
@@ -22,6 +27,7 @@ export default function DefendantsPage() {
             }
             const data = await response.json();
             setDefendants(data);
+            setFilteredDefendants(data);
         } catch (err) {
             setError(
                 err instanceof Error
@@ -36,6 +42,22 @@ export default function DefendantsPage() {
     useEffect(() => {
         fetchDefendants();
     }, []);
+
+    useEffect(() => {
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase();
+            const filtered = defendants.filter(
+                (defendant) =>
+                    defendant.fio.toLowerCase().includes(query) ||
+                    defendant.address.toLowerCase().includes(query) ||
+                    defendant.contact?.toLowerCase().includes(query) ||
+                    defendant.id.toString().includes(query)
+            );
+            setFilteredDefendants(filtered);
+        } else {
+            setFilteredDefendants(defendants);
+        }
+    }, [searchQuery, defendants]);
 
     const handleEdit = (row: Defendant) => {
         router.push(`/convicts/${row.id}/edit`);
@@ -97,9 +119,17 @@ export default function DefendantsPage() {
                 )}
             </div>
             <div className="bg-white rounded-lg shadow-lg p-6">
+                <div className="mb-4">
+                    <Input
+                        placeholder="Пошук за ПІБ, адресою, контактом або ID..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="bg-white text-black placeholder:text-gray-500"
+                    />
+                </div>
                 <DataTable
                     columns={columns}
-                    data={defendants}
+                    data={filteredDefendants}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                 />
