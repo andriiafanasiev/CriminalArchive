@@ -1,24 +1,27 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export async function GET() {
     try {
-        const articles = await prisma.crimeArticle.findMany();
-
-        if (!Array.isArray(articles)) {
-            return NextResponse.json(
-                { error: 'Invalid data format' },
-                { status: 500 }
-            );
-        }
-
+        const articles = await prisma.crimeArticle.findMany({
+            include: {
+                caseLinks: {
+                    include: {
+                        case: {
+                            include: {
+                                convict: true,
+                                investigator: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
         return NextResponse.json(articles);
     } catch (error) {
         console.error('Error fetching articles:', error);
         return NextResponse.json(
-            { error: 'Failed to fetch articles' },
+            { error: 'Помилка при отриманні даних' },
             { status: 500 }
         );
     }
@@ -27,27 +30,27 @@ export async function GET() {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { NUMBER_STATYA, DESCRIPTION_STATYA } = body;
+        const { number, description } = body;
 
-        if (!NUMBER_STATYA) {
+        if (!number || !description) {
             return NextResponse.json(
-                { error: 'Missing required fields' },
+                { error: "Номер та опис є обов'язковими полями" },
                 { status: 400 }
             );
         }
 
-        const newArticle = await prisma.crimeArticle.create({
+        const article = await prisma.crimeArticle.create({
             data: {
-                NUMBER_STATYA,
-                DESCRIPTION_STATYA,
+                number,
+                description,
             },
         });
 
-        return NextResponse.json(newArticle);
+        return NextResponse.json(article);
     } catch (error) {
-        console.error('Error creating article:', error);
+        console.error('Помилка при створенні статті:', error);
         return NextResponse.json(
-            { error: 'Failed to create article' },
+            { error: 'Помилка при створенні статті' },
             { status: 500 }
         );
     }

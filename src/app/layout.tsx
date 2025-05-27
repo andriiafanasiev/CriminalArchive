@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import Navbar from './components/Navbar';
+import { AuthProvider } from './components/auth/auth-provider';
 
 const geistSans = Geist({
     variable: '--font-geist-sans',
@@ -31,12 +32,14 @@ export default function RootLayout({
                     backgroundImage: 'url("/assets/justice-bg.jpeg")',
                 }}
             >
-                <div className="min-h-screen bg-black/50">
-                    <Navbar />
-                    <main className="container mx-auto px-4 py-8">
-                        {children}
-                    </main>
-                </div>
+                <AuthProvider>
+                    <div className="min-h-screen bg-black/50">
+                        <Navbar />
+                        <main className="container mx-auto px-4 py-8">
+                            {children}
+                        </main>
+                    </div>
+                </AuthProvider>
             </body>
         </html>
     );

@@ -1,3 +1,9 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,54 +14,100 @@ datasource db {
 }
 
 model Convict {
-  ID_ZASUDZ      Int      @id @default(autoincrement())
-  FIO_ZASUDZ     String
-  DATE_NARODZH   DateTime?
-  ADRESS_ZASUDZ  String
-  CONTACT_ZASUDZ String?
-  Cases          Case[]
+  id          Int        @id @default(autoincrement()) @map("ID_ZASUDZ")
+  fio         String     @map("FIO_ZASUDZ")
+  birthDate   DateTime?  @map("DATE_NARODZH")
+  address     String     @map("ADRESS_ZASUDZ")
+  contact     String?    @map("CONTACT_ZASUDZ")
+  cases       Case[]
+  sentences   Sentence[]
 
   @@map("Convicts")
 }
 
 model Investigator {
-  ID_SLIDCHY     Int      @id @default(autoincrement())
-  FIO_SLIDCHY    String
-  POSADA_SLIDCHY String
-  Cases          Case[]
+  id          Int        @id @default(autoincrement()) @map("ID_SLIDCHY")
+  fio         String     @map("FIO_SLIDCHY")
+  position    String     @map("POSADA_SLIDCHY")
+  cases       Case[]
+  user        User?
 
   @@map("Investigators")
 }
 
 model CrimeArticle {
-  ID_STATYA          Int         @id @default(autoincrement())
-  NUMBER_STATYA      String
-  DESCRIPTION_STATYA String?
-  CaseLinks          CaseLink[]
+  id          Int        @id @default(autoincrement()) @map("ID_STATYA")
+  number      String     @map("NUMBER_STATYA")
+  description String     @map("DESCRIPTION_STATYA") @db.Text
+  caseLinks   CaseLink[]
 
   @@map("CrimeArticles")
 }
 
 model Case {
-  ID_SPRAVY     Int      @id @default(autoincrement())
-  ID_ZASUDZ     Int?
-  ID_SLIDCHY    Int?
-  STATUS_SPRAVY String
-  convict       Convict?      @relation(fields: [ID_ZASUDZ], references: [ID_ZASUDZ])
-  investigator  Investigator? @relation(fields: [ID_SLIDCHY], references: [ID_SLIDCHY])
-  CaseLinks     CaseLink[]
+  id          Int        @id @default(autoincrement()) @map("ID_SPRAVY")
+  convictId   Int        @map("ID_ZASUDZ")
+  investigatorId Int     @map("ID_SLIDCHY")
+  status      CaseStatus @map("STATUS_SPRAVY")
+  convict     Convict    @relation(fields: [convictId], references: [id])
+  investigator Investigator @relation(fields: [investigatorId], references: [id])
+  caseLinks   CaseLink[]
+  sentences   Sentence[]
 
   @@map("Cases")
 }
 
 model CaseLink {
-  ID_SPRAVY   Int
-  ID_STATYA   Int
-  DATE_SPRAVY DateTime
+  caseId      Int        @map("ID_SPRAVY")
+  articleId   Int        @map("ID_STATYA")
+  date        DateTime   @map("DATE_SPRAVY")
+  case        Case       @relation(fields: [caseId], references: [id])
+  article     CrimeArticle @relation(fields: [articleId], references: [id])
 
-  case        Case         @relation(fields: [ID_SPRAVY], references: [ID_SPRAVY])
-  article     CrimeArticle @relation(fields: [ID_STATYA], references: [ID_STATYA])
-
-  @@id([ID_SPRAVY, ID_STATYA])
+  @@id([caseId, articleId])
   @@map("CaseLinks")
+}
+
+model Sentence {
+  id          Int        @id @default(autoincrement()) @map("ID_SENTENCE")
+  convictId   Int        @map("ID_ZASUDZ")
+  caseId      Int        @map("ID_SPRAVY")
+  startDate   DateTime   @map("START_DATE")
+  endDate     DateTime?  @map("END_DATE")
+  termYears   Int?       @map("TERM_YEARS")
+  type        SentenceType @map("TYPE_POKARANNYA")
+  location    String?    @map("LOCATION_POKARANNYA")
+  convict     Convict    @relation(fields: [convictId], references: [id])
+  case        Case       @relation(fields: [caseId], references: [id])
+
+  @@map("Sentences")
+}
+
+model User {
+  id            Int          @id @default(autoincrement()) @map("ID_USER")
+  login         String       @unique @map("LOGIN")
+  password      String       @map("PASSWORD")
+  role          UserRole       @default(slidchiy) @map("ROLE")
+  investigatorId Int?        @unique @map("ID_SLIDCHY")
+  investigator  Investigator? @relation(fields: [investigatorId], references: [id], onDelete: SetNull)
+
+  @@map("Users")
+}
+
+enum CaseStatus {
+  active @map("активна")
+  closed @map("закрита")
+  pending @map("очікує розгляду")
+}
+
+enum SentenceType {
+  imprisonment @map("позбавлення волі")
+  correctional @map("виправні роботи")
+  conditional @map("умовне")
+  fine @map("штраф")
+}
+
+enum UserRole {
+  admin
+  slidchiy
 }

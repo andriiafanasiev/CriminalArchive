@@ -1,28 +1,24 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export async function GET() {
     try {
+        console.log('Fetching investigators...');
         const investigators = await prisma.investigator.findMany({
-            include: {
-                Cases: true,
+            orderBy: {
+                fio: 'asc',
             },
         });
 
-        if (!Array.isArray(investigators)) {
-            return NextResponse.json(
-                { error: 'Invalid data format' },
-                { status: 500 }
-            );
-        }
-
+        console.log(
+            'Investigators fetched successfully:',
+            investigators.length
+        );
         return NextResponse.json(investigators);
     } catch (error) {
-        console.error('Error fetching investigators:', error);
+        console.error('Помилка при отриманні слідчих:', error);
         return NextResponse.json(
-            { error: 'Failed to fetch investigators' },
+            { error: 'Помилка при отриманні слідчих' },
             { status: 500 }
         );
     }
@@ -31,27 +27,27 @@ export async function GET() {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { FIO_SLIDCHY, POSADA_SLIDCHY } = body;
+        const { fio, position } = body;
 
-        if (!FIO_SLIDCHY || !POSADA_SLIDCHY) {
+        if (!fio || !position) {
             return NextResponse.json(
-                { error: 'Missing required fields' },
+                { error: "ПІБ та посада є обов'язковими полями" },
                 { status: 400 }
             );
         }
 
-        const newInvestigator = await prisma.investigator.create({
+        const investigator = await prisma.investigator.create({
             data: {
-                FIO_SLIDCHY,
-                POSADA_SLIDCHY,
+                fio,
+                position,
             },
         });
 
-        return NextResponse.json(newInvestigator);
+        return NextResponse.json(investigator);
     } catch (error) {
-        console.error('Error creating investigator:', error);
+        console.error('Помилка при створенні слідчого:', error);
         return NextResponse.json(
-            { error: 'Failed to create investigator' },
+            { error: 'Помилка при створенні слідчого' },
             { status: 500 }
         );
     }

@@ -1,7 +1,19 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+import {
+    Case,
+    Convict,
+    Investigator,
+    Sentence,
+    CaseLink,
+} from '@prisma/client';
 
-const prisma = new PrismaClient();
+type CaseWithRelations = Case & {
+    convict: Convict;
+    investigator: Investigator;
+    sentences: Sentence[];
+    caseLinks: CaseLink[];
+};
 
 export async function GET() {
     try {
@@ -9,26 +21,37 @@ export async function GET() {
             include: {
                 convict: true,
                 investigator: true,
-                CaseLinks: {
-                    include: {
-                        article: true,
-                    },
-                },
+                sentences: true,
+                caseLinks: true,
             },
         });
 
-        if (!Array.isArray(cases)) {
-            return NextResponse.json(
-                { error: 'Invalid data format' },
-                { status: 500 }
-            );
-        }
+        // Трансформуємо дані для відображення
+        const transformedCases = cases.map((case_: CaseWithRelations) => ({
+            id: case_.id,
+            convictId: case_.convictId,
+            investigatorId: case_.investigatorId,
+            status: case_.status,
+            convictName: case_.convict.fio,
+            investigatorName: case_.investigator.fio,
+            date: case_.caseLinks[0]?.date.toISOString() || null,
+            sentence: case_.sentences[0]
+                ? {
+                      type: case_.sentences[0].type,
+                      startDate: case_.sentences[0].startDate.toISOString(),
+                      endDate:
+                          case_.sentences[0].endDate?.toISOString() || null,
+                      termYears: case_.sentences[0].termYears,
+                      location: case_.sentences[0].location,
+                  }
+                : null,
+        }));
 
-        return NextResponse.json(cases);
+        return NextResponse.json(transformedCases);
     } catch (error) {
-        console.error('Error fetching cases:', error);
+        console.error('Помилка при отриманні справ:', error);
         return NextResponse.json(
-            { error: 'Failed to fetch cases' },
+            { error: 'Помилка при отриманні справ' },
             { status: 500 }
         );
     }
@@ -36,33 +59,50 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
-        const { ID_ZASUDZ, ID_SLIDCHY, STATUS_SPRAVY } = body;
-
-        if (!ID_ZASUDZ || !ID_SLIDCHY || !STATUS_SPRAVY) {
-            return NextResponse.json(
-                { error: 'Missing required fields' },
-                { status: 400 }
-            );
-        }
+        const data = await request.json();
+        const { defendantId, investigatorId, status, sentence } = data;
 
         const newCase = await prisma.case.create({
             data: {
-                ID_ZASUDZ: parseInt(ID_ZASUDZ),
-                ID_SLIDCHY: parseInt(ID_SLIDCHY),
-                STATUS_SPRAVY,
+                status,
+                convictId: parseInt(defendantId),
+                investigatorId: parseInt(investigatorId),
+                caseLinks: {
+                    create: {
+                        date: new Date(),
+                        articleId: 1, // Тимчасово, потім треба буде додати вибір статті
+                    },
+                },
+                sentences: sentence
+                    ? {
+                          create: {
+                              type: sentence.type,
+                              startDate: new Date(sentence.startDate),
+                              endDate: sentence.endDate
+                                  ? new Date(sentence.endDate)
+                                  : null,
+                              termYears: sentence.termYears
+                                  ? parseInt(sentence.termYears)
+                                  : null,
+                              location: sentence.location,
+                              convictId: parseInt(defendantId),
+                          },
+                      }
+                    : undefined,
             },
             include: {
                 convict: true,
                 investigator: true,
+                sentences: true,
+                caseLinks: true,
             },
         });
 
         return NextResponse.json(newCase);
     } catch (error) {
-        console.error('Error creating case:', error);
+        console.error('Помилка при створенні справи:', error);
         return NextResponse.json(
-            { error: 'Failed to create case' },
+            { error: 'Помилка при створенні справи' },
             { status: 500 }
         );
     }

@@ -1,28 +1,19 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 export async function GET() {
     try {
-        const convicts = await prisma.convict.findMany({
-            include: {
-                Cases: true,
+        const defendants = await prisma.convict.findMany({
+            orderBy: {
+                fio: 'asc',
             },
         });
 
-        if (!Array.isArray(convicts)) {
-            return NextResponse.json(
-                { error: 'Invalid data format' },
-                { status: 500 }
-            );
-        }
-
-        return NextResponse.json(convicts);
+        return NextResponse.json(defendants);
     } catch (error) {
-        console.error('Error fetching convicts:', error);
+        console.error('Помилка при отриманні засуджених:', error);
         return NextResponse.json(
-            { error: 'Failed to fetch convicts' },
+            { error: 'Помилка при отриманні засуджених' },
             { status: 500 }
         );
     }
@@ -30,31 +21,23 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
-        const { FIO_ZASUDZ, DATE_NARODZH, ADRESS_ZASUDZ, CONTACT_ZASUDZ } =
-            body;
+        const data = await request.json();
+        const { fio, birthDate, address, contact } = data;
 
-        if (!FIO_ZASUDZ || !ADRESS_ZASUDZ) {
-            return NextResponse.json(
-                { error: 'Missing required fields' },
-                { status: 400 }
-            );
-        }
-
-        const newConvict = await prisma.convict.create({
+        const defendant = await prisma.convict.create({
             data: {
-                FIO_ZASUDZ,
-                DATE_NARODZH: DATE_NARODZH ? new Date(DATE_NARODZH) : null,
-                ADRESS_ZASUDZ,
-                CONTACT_ZASUDZ,
+                fio,
+                birthDate: birthDate ? new Date(birthDate) : null,
+                address,
+                contact,
             },
         });
 
-        return NextResponse.json(newConvict);
+        return NextResponse.json(defendant);
     } catch (error) {
-        console.error('Error creating convict:', error);
+        console.error('Помилка при створенні засудженого:', error);
         return NextResponse.json(
-            { error: 'Failed to create convict' },
+            { error: 'Помилка при створенні засудженого' },
             { status: 500 }
         );
     }
